@@ -1,4 +1,8 @@
-from __future__ import annotations
+try:
+    from __future__ import annotations
+except SyntaxError:
+    # Requires Python 3.7
+    pass
 
 import tkinter as tk
 
@@ -90,7 +94,7 @@ class TopLeftRectangle(tk.Canvas):
         self.bind("<Double-Button-1>", self.double_b1)
         self.bind(rc_binding, self.rc)
 
-    def redraw(self) -> None:
+    def redraw(self):
         self.itemconfig("rw", fill=self.PAR.ops.top_left_fg)
         self.itemconfig("rh", fill=self.PAR.ops.top_left_fg)
         self.itemconfig(

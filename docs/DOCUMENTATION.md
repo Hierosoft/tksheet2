@@ -1250,7 +1250,11 @@ There is limited support in tkinter for keybindings in languages other than engl
 There are ways around this however, see below for a limited example of how this might be achieved:
 
 ```python
-from __future__ import annotations
+try:
+    from __future__ import annotations
+except SyntaxError:
+    # Requires Python 3.7
+    pass
 
 import tkinter as tk
 
@@ -1258,7 +1262,7 @@ from tksheet import Sheet
 
 
 class demo(tk.Tk):
-    def __init__(self) -> None:
+    def __init__(self):
         tk.Tk.__init__(self)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -6776,6 +6780,7 @@ app.mainloop()
 To both load a csv file and save tksheet data as a csv file not including headers and index.
 
 ```python
+import sys
 from tksheet import Sheet
 import tkinter as tk
 from tkinter import filedialog
@@ -6831,7 +6836,10 @@ class demo(tk.Tk):
         if not filepath or not filepath.lower().endswith((".csv", ".tsv")):
             return
         try:
-            with open(normpath(filepath), "w", newline="", encoding="utf-8") as fh:
+            kwargs = {'newline'=""}
+            if sys.version_info.major >= 3:
+                kwargs['encoding'] = "utf-8"
+            with open(normpath(filepath), "w", **kwargs) as fh:
                 writer = csv.writer(
                     fh,
                     dialect=csv.excel if filepath.lower().endswith(".csv") else csv.excel_tab,

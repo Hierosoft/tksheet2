@@ -1,4 +1,8 @@
-from __future__ import annotations
+try:
+    from __future__ import annotations
+except SyntaxError:
+    # Requires Python 3.7
+    pass
 
 import pickle
 from collections import namedtuple
@@ -91,7 +95,7 @@ class DotDict(dict):
     def __setstate__(self, state: DotDict) -> None:
         self.update(state)
 
-    def __setitem__(self, key: Hashable, item: object) -> None:
+    def __setitem__(self, key: Hashable, item):
         if type(item) is dict:  # noqa: E721
             super().__setitem__(key, DotDict(item))
         else:
@@ -131,7 +135,7 @@ class Span(dict):
         else:
             return super().__getitem__(key)
 
-    def __setitem__(self, key: Hashable, item: object) -> None:
+    def __setitem__(self, key: Hashable, item):
         if key == "data" or key == "value":
             self["widget"].set_data(self, data=item)
         elif key == "bg":
@@ -418,7 +422,7 @@ class Node:
 class DropdownStorage:
     __slots__ = ("canvas_id", "window", "open")
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.canvas_id = None
         self.window = None
         self.open = False
@@ -435,12 +439,12 @@ class DropdownStorage:
 class TextEditorStorage:
     __slots__ = ("canvas_id", "window", "open")
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.canvas_id = None
         self.window = None
         self.open = False
 
-    def focus(self) -> None:
+    def focus(self):
         if self.window:
             self.window.tktext.focus_set()
 

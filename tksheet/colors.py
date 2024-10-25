@@ -1,6 +1,5 @@
-from __future__ import annotations
 
-color_map: dict[str, str] = {
+color_map = {
     "alice blue": "#F0F8FF",
     "ALICE BLUE": "#F0F8FF",
     "AliceBlue": "#F0F8FF",

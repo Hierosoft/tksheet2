@@ -1,4 +1,8 @@
-from __future__ import annotations
+try:
+    from __future__ import annotations
+except SyntaxError:
+    # Requires Python 3.7
+    pass
 
 import tkinter as tk
 from collections.abc import Callable
@@ -124,7 +128,7 @@ class TextEditorTkText(tk.Text):
                     self.newline_bindng(check_lines=False)
         return result
 
-    def rc(self, event: object) -> None:
+    def rc(self, event):
         self.focus_set()
         self.rc_popup_menu.tk_popup(event.x_root, event.y_root)
 
@@ -196,7 +200,7 @@ class TextEditor(tk.Frame):
         self.tktext.delete(1.0, "end")
         self.tktext.insert(1.0, text)
 
-    def scroll_to_bottom(self) -> None:
+    def scroll_to_bottom(self):
         self.tktext.yview_moveto(1)
 
     def reset(

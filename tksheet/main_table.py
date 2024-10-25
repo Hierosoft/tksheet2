@@ -1,4 +1,8 @@
-from __future__ import annotations
+try:
+    from __future__ import annotations
+except SyntaxError:
+    # Requires Python 3.7
+    pass
 
 import csv as csv
 import io
@@ -370,7 +374,7 @@ class MainTable(tk.Canvas):
     def refresh(self, event: object = None) -> None:
         self.main_table_redraw_grid_and_text(True, True)
 
-    def window_configured(self, event: object) -> None:
+    def window_configured(self, event):
         w = self.PAR.winfo_width()
         if w != self.PAR_width:
             self.PAR_width = w
@@ -449,7 +453,7 @@ class MainTable(tk.Canvas):
                     for canvas in (self, self.RI, self.CH):
                         canvas.unbind(b[0])
 
-    def reset_tags(self) -> None:
+    def reset_tags(self):
         self.tagged_cells = {}
         self.tagged_rows = {}
         self.tagged_columns = {}
@@ -519,7 +523,7 @@ class MainTable(tk.Canvas):
             )
         self.disp_ctrl_outline[t] = True
 
-    def delete_ctrl_outlines(self) -> None:
+    def delete_ctrl_outlines(self):
         self.hidd_ctrl_outline.update(self.disp_ctrl_outline)
         self.disp_ctrl_outline = {}
         for t, sh in self.hidd_ctrl_outline.items():
@@ -2322,7 +2326,7 @@ class MainTable(tk.Canvas):
             pass
         menu.add_command(**kwargs)
 
-    def create_rc_menus(self) -> None:
+    def create_rc_menus(self):
         if not self.rc_popup_menu:
             self.rc_popup_menu = tk.Menu(self, tearoff=0, background=self.PAR.ops.popup_menu_bg)
         if not self.CH.ch_rc_popup_menu:
@@ -2785,7 +2789,7 @@ class MainTable(tk.Canvas):
                 for binding in self.PAR.ops[bindings_key]:
                     widget.unbind(binding)
 
-    def reset_mouse_motion_creations(self) -> None:
+    def reset_mouse_motion_creations(self):
         if self.current_cursor != "":
             self.config(cursor="")
             self.RI.config(cursor="")
@@ -3182,7 +3186,7 @@ class MainTable(tk.Canvas):
             return None
         return c
 
-    def fix_views(self) -> None:
+    def fix_views(self):
         xcheck = self.xview()
         ycheck = self.yview()
         if xcheck and xcheck[0] <= 0:
@@ -3311,7 +3315,7 @@ class MainTable(tk.Canvas):
         self.set_xviews(*x_args)
         self.set_yviews(*y_args)
 
-    def mousewheel(self, event: object) -> None:
+    def mousewheel(self, event):
         if event.delta < 0 or event.num == 5:
             self.yview_scroll(1, "units")
             self.RI.yview_scroll(1, "units")
@@ -3324,7 +3328,7 @@ class MainTable(tk.Canvas):
             self.y_move_synced_scrolls("moveto", self.yview()[0])
         self.main_table_redraw_grid_and_text(redraw_header=True, redraw_row_index=True)
 
-    def shift_mousewheel(self, event: object) -> None:
+    def shift_mousewheel(self, event):
         if event.delta < 0 or event.num == 5:
             self.xview_scroll(1, "units")
             self.CH.xview_scroll(1, "units")
@@ -5886,7 +5890,7 @@ class MainTable(tk.Canvas):
             if r < len(self.row_positions) - 1 and c < len(self.col_positions) - 1:
                 self.select_cell(r, c, redraw=True)
 
-    def set_current_to_last(self) -> None:
+    def set_current_to_last(self):
         if self.selection_boxes:
             box = next(iter(reversed(self.selection_boxes.values())))
             r1, c1, r2, c2 = box.coords
@@ -6019,7 +6023,7 @@ class MainTable(tk.Canvas):
             self.CH.being_drawn_item = None
         return True
 
-    def hide_selected(self) -> None:
+    def hide_selected(self):
         if self.selected:
             self.hide_box(self.selected.iid)
             self.selected = tuple()
@@ -6126,7 +6130,7 @@ class MainTable(tk.Canvas):
             self.run_selection_binding(type_)
         return fill_iid
 
-    def lower_selection_boxes(self) -> None:
+    def lower_selection_boxes(self):
         if self.selected:
             if not self.PAR.ops.show_selected_cells_border:
                 self.tag_lower(self.selected.iid)
@@ -6249,7 +6253,7 @@ class MainTable(tk.Canvas):
                 self.CH.selection_binding_func(sel_event)
         self.PAR.emit_event("<<SheetSelect>>", data=sel_event)
 
-    def recreate_all_selection_boxes(self) -> None:
+    def recreate_all_selection_boxes(self):
         if not self.selected:
             return
         for item, box in self.get_selection_items():
@@ -6700,7 +6704,7 @@ class MainTable(tk.Canvas):
                 )
                 # self.itemconfig(self.dropdown.canvas_id, anchor=anchor, height=win_h)
 
-    def hide_text_editor(self) -> None:
+    def hide_text_editor(self):
         if self.text_editor.open:
             for binding in text_editor_to_unbind:
                 self.text_editor.tktext.unbind(binding)
@@ -7084,7 +7088,7 @@ class MainTable(tk.Canvas):
         self.RI.hide_text_editor_and_dropdown(redraw=False)
         self.CH.hide_text_editor_and_dropdown(redraw=False)
 
-    def hide_dropdown_window(self) -> None:
+    def hide_dropdown_window(self):
         if self.dropdown.open:
             self.dropdown.window.unbind("<FocusOut>")
             self.itemconfig(self.dropdown.canvas_id, state="hidden")
@@ -7247,7 +7251,7 @@ class MainTable(tk.Canvas):
         self.data.extend(self.get_empty_row_seq(rn, end=ncols, start=0) for rn in range(len(self.data), datarn + 1))
         return len(self.data)
 
-    def reapply_formatting(self) -> None:
+    def reapply_formatting(self):
         for c in gen_formatted(self.col_options):
             for r in range(len(self.data)):
                 if not (

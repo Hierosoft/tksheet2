@@ -1,4 +1,8 @@
-from __future__ import annotations
+try:
+    from __future__ import annotations
+except SyntaxError:
+    # Requires Python 3.7
+    pass
 
 import tkinter as tk
 from collections import defaultdict
@@ -167,7 +171,7 @@ class RowIndex(tk.Canvas):
             self.unbind("<Double-Button-1>")
             self.unbind(rc_binding)
 
-    def tree_reset(self) -> None:
+    def tree_reset(self):
         # treeview mode
         self.tree = {}
         self.tree_open_ids = set()
@@ -188,7 +192,7 @@ class RowIndex(tk.Canvas):
         if set_TL:
             self.TL.set_dimensions(new_w=new_width, recreate_selection_boxes=recreate_selection_boxes)
 
-    def rc(self, event: object) -> None:
+    def rc(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         self.focus_set()
         popup_menu = None
@@ -215,7 +219,7 @@ class RowIndex(tk.Canvas):
             self.popup_menu_loc = r
             popup_menu.tk_popup(event.x_root, event.y_root)
 
-    def ctrl_b1_press(self, event: object) -> None:
+    def ctrl_b1_press(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         if (
             (self.drag_and_drop_enabled or self.row_selection_enabled)
@@ -238,7 +242,7 @@ class RowIndex(tk.Canvas):
         elif not self.MT.ctrl_select_enabled:
             self.b1_press(event)
 
-    def ctrl_shift_b1_press(self, event: object) -> None:
+    def ctrl_shift_b1_press(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         y = event.y
         r = self.MT.identify_row(y=y)
@@ -274,7 +278,7 @@ class RowIndex(tk.Canvas):
         elif not self.MT.ctrl_select_enabled:
             self.shift_b1_press(event)
 
-    def shift_b1_press(self, event: object) -> None:
+    def shift_b1_press(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         y = event.y
         r = self.MT.identify_row(y=y)
@@ -329,7 +333,7 @@ class RowIndex(tk.Canvas):
             t = self.create_line(x1, y1, x2, y2, width=width, fill=fill, tag=tag)
         self.disp_resize_lines[t] = True
 
-    def delete_resize_lines(self) -> None:
+    def delete_resize_lines(self):
         self.hidd_resize_lines.update(self.disp_resize_lines)
         self.disp_resize_lines = {}
         for t, sh in self.hidd_resize_lines.items():
@@ -342,7 +346,7 @@ class RowIndex(tk.Canvas):
             if x >= x1 and y >= y1 and x <= x2 and y <= y2:
                 return r
 
-    def mouse_motion(self, event: object) -> None:
+    def mouse_motion(self, event):
         if not self.currently_resizing_height and not self.currently_resizing_width:
             x = self.canvasx(event.x)
             y = self.canvasy(event.y)
@@ -614,7 +618,7 @@ class RowIndex(tk.Canvas):
         elif end_row < start_row:
             return end_row, 0, start_row + 1, len(self.MT.col_positions) - 1, "rows"
 
-    def ctrl_b1_motion(self, event: object) -> None:
+    def ctrl_b1_motion(self, event):
         x1, y1, x2, y2 = self.MT.get_canvas_visible_area()
         if (
             self.drag_and_drop_enabled
@@ -759,7 +763,7 @@ class RowIndex(tk.Canvas):
             need_redraw = True
         return need_redraw
 
-    def fix_yview(self) -> None:
+    def fix_yview(self):
         ycheck = self.yview()
         if ycheck and ycheck[0] < 0:
             self.MT.set_yviews("moveto", 0)
@@ -780,11 +784,11 @@ class RowIndex(tk.Canvas):
             and event.x < self.MT.index_txt_height + 4
         )
 
-    def drag_width_resize(self) -> None:
+    def drag_width_resize(self):
         self.set_width(self.new_row_width, set_TL=True)
         self.MT.main_table_redraw_grid_and_text(redraw_header=True, redraw_row_index=True)
 
-    def drag_height_resize(self) -> None:
+    def drag_height_resize(self):
         new_row_pos = int(self.coords("rhl")[1])
         old_height = self.MT.row_positions[self.rsz_h] - self.MT.row_positions[self.rsz_h - 1]
         size = new_row_pos - self.MT.row_positions[self.rsz_h - 1]
@@ -810,7 +814,7 @@ class RowIndex(tk.Canvas):
                 )
             )
 
-    def b1_release(self, event: object) -> None:
+    def b1_release(self, event):
         if self.being_drawn_item is not None and (to_sel := self.MT.coords_and_type(self.being_drawn_item)):
             r_to_sel, c_to_sel = self.MT.selected.row, self.MT.selected.column
             self.MT.hide_selection_box(self.being_drawn_item)
@@ -2054,7 +2058,7 @@ class RowIndex(tk.Canvas):
                 )
                 # self.itemconfig(self.dropdown.canvas_id, anchor=anchor, height=win_h)
 
-    def hide_text_editor(self) -> None:
+    def hide_text_editor(self):
         if self.text_editor.open:
             for binding in text_editor_to_unbind:
                 self.text_editor.tktext.unbind(binding)
@@ -2303,7 +2307,7 @@ class RowIndex(tk.Canvas):
         self.MT.mouseclick_outside_editor_or_dropdown()
         return self.mouseclick_outside_editor_or_dropdown(inside)
 
-    def hide_dropdown_window(self) -> None:
+    def hide_dropdown_window(self):
         if self.dropdown.open:
             self.dropdown.window.unbind("<FocusOut>")
             self.itemconfig(self.dropdown.canvas_id, state="hidden")

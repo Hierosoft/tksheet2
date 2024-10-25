@@ -1,4 +1,8 @@
-from __future__ import annotations
+try:
+    from __future__ import annotations
+except SyntaxError:
+    # Requires Python 3.7
+    pass
 
 import tkinter as tk
 from bisect import bisect_left
@@ -5457,7 +5461,7 @@ class Sheet(tk.Frame):
             self.after_redraw_id = self.after(self.after_redraw_time_ms, self.after_redraw)
         return self
 
-    def after_redraw(self) -> None:
+    def after_redraw(self):
         self.MT.main_table_redraw_grid_and_text(redraw_header=True, redraw_row_index=True)
         self.after_redraw_id = None
 
@@ -7065,13 +7069,13 @@ class Dropdown(Sheet):
                 self.see(self.row, 0, redraw=False)
                 self.select_row(self.row)
 
-    def mouse_motion(self, event: object) -> None:
+    def mouse_motion(self, event):
         row = self.identify_row(event, exclude_index=True, allow_end=False)
         if row is not None and row != self.row:
             self.row = row
             self.select_row(self.row)
 
-    def _reselect(self) -> None:
+    def _reselect(self):
         rows = self.get_selected_rows()
         if rows:
             self.select_row(next(iter(rows)))
