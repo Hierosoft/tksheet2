@@ -68,3 +68,18 @@ line-length = 120
 Downgrade requirement to python 2.7 and add a classifier as well but keep python 3 classifiers.
 
 The repo URL is now https://github.com/Hierosoft so change links to reflect that. Also add a second author, Poikilos, 7557867+Poikilos@users.noreply.github.com
+
+## docs
+### DOCUMENTATION.md
+- same as below
+## tksheet
+### column_headers.py, formatters.py
+- 2024-10-25
+
+Now remove type hinting from this and instead document the args, return, and types using a Google-style docstring:
+
+- code was inserted next
+
+Now do [...]
+
+- This process was repeated for many instances of code (changed in same commit as this file).

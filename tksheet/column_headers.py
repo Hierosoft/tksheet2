@@ -1,4 +1,8 @@
-from __future__ import annotations
+try:
+    from __future__ import annotations
+except SyntaxError:
+    # Requires Python 3.7
+    pass
 
 import tkinter as tk
 from collections import defaultdict
@@ -131,14 +135,14 @@ class ColumnHeaders(tk.Canvas):
         self.align = kwargs["header_align"]
         self.basic_bindings()
 
-    def event_generate(self, *args, **kwargs) -> None:
+    def event_generate(self, *args, **kwargs):
         for arg in args:
             if self.MT and arg in self.MT.event_linker:
                 self.MT.event_linker[arg]()
             else:
                 super().event_generate(*args, **kwargs)
 
-    def basic_bindings(self, enable: bool = True) -> None:
+    def basic_bindings(self, enable):
         if enable:
             self.bind("<Motion>", self.mouse_motion)
             self.bind("<ButtonPress-1>", self.b1_press)
@@ -162,7 +166,7 @@ class ColumnHeaders(tk.Canvas):
                 self.unbind("<Button-4>")
                 self.unbind("<Button-5>")
 
-    def mousewheel(self, event: object) -> None:
+    def mousewheel(self, event):
         if isinstance(self.MT._headers, int):
             maxlines = max(
                 (
@@ -193,7 +197,14 @@ class ColumnHeaders(tk.Canvas):
             self.lines_start_at -= 1
         self.MT.main_table_redraw_grid_and_text(redraw_header=True, redraw_row_index=False, redraw_table=False)
 
-    def set_height(self, new_height: int, set_TL: bool = False) -> None:
+    def set_height(self, new_height, set_TL=False):
+        """Set the height of the widget.
+
+        Args:
+            new_height (int): The new height to set for the widget.
+            set_TL (bool): Whether to adjust the `TL` dimensions to match
+                the new height. Defaults to False.
+        """
         self.current_height = new_height
         try:
             self.config(height=new_height)
@@ -202,7 +213,7 @@ class ColumnHeaders(tk.Canvas):
         if set_TL and self.TL is not None:
             self.TL.set_dimensions(new_h=new_height)
 
-    def rc(self, event: object) -> None:
+    def rc(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         self.focus_set()
         popup_menu = None
@@ -229,7 +240,7 @@ class ColumnHeaders(tk.Canvas):
             self.popup_menu_loc = c
             popup_menu.tk_popup(event.x_root, event.y_root)
 
-    def ctrl_b1_press(self, event: object) -> None:
+    def ctrl_b1_press(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         if (
             (self.drag_and_drop_enabled or self.col_selection_enabled)
@@ -252,7 +263,7 @@ class ColumnHeaders(tk.Canvas):
         elif not self.MT.ctrl_select_enabled:
             self.b1_press(event)
 
-    def ctrl_shift_b1_press(self, event: object) -> None:
+    def ctrl_shift_b1_press(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         x = event.x
         c = self.MT.identify_col(x=x)
@@ -288,7 +299,7 @@ class ColumnHeaders(tk.Canvas):
         elif not self.MT.ctrl_select_enabled:
             self.shift_b1_press(event)
 
-    def shift_b1_press(self, event: object) -> None:
+    def shift_b1_press(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         x = event.x
         c = self.MT.identify_col(x=x)
@@ -315,22 +326,38 @@ class ColumnHeaders(tk.Canvas):
                         to_move=sorted(self.MT.get_selected_cols()),
                     )
 
-    def get_shift_select_box(self, c: int, min_c: int) -> tuple[int, int, int, int, str]:
+    def get_shift_select_box(self, c, min_c):
+        """Determine selection box boundaries from current & minimum
+        columns.
+
+        Args:
+            c (int): The current column index.
+            min_c (int): The minimum column index in the selection.
+
+        Returns:
+            tuple(int, int, int, int, str): A tuple containing the top
+                row index (0), the starting column index, the last row
+                index (length of `MT.row_positions` - 1), and the ending
+                column index.
+        """
         if c > min_c:
             return 0, min_c, len(self.MT.row_positions) - 1, c + 1
         elif c < min_c:
             return 0, c, len(self.MT.row_positions) - 1, min_c + 1
 
-    def create_resize_line(
-        self,
-        x1: int,
-        y1: int,
-        x2: int,
-        y2: int,
-        width: int,
-        fill: str,
-        tag: str | tuple[str],
-    ) -> None:
+    def create_resize_line(self, x1, y1, x2, y2, width, fill, tag):
+        """Create or update a resize line on the canvas.
+
+        Args:
+            x1 (int): The starting x-coordinate of the line.
+            y1 (int): The starting y-coordinate of the line.
+            x2 (int): The ending x-coordinate of the line.
+            y2 (int): The ending y-coordinate of the line.
+            width (int): The width of the line.
+            fill (str): The color of the line.
+            tag (str or tuple of str): The tag(s) associated with the
+                line.
+        """
         if self.hidd_resize_lines:
             t, sh = self.hidd_resize_lines.popitem()
             self.coords(t, x1, y1, x2, y2)
@@ -343,7 +370,7 @@ class ColumnHeaders(tk.Canvas):
             t = self.create_line(x1, y1, x2, y2, width=width, fill=fill, tag=tag)
         self.disp_resize_lines[t] = True
 
-    def delete_resize_lines(self) -> None:
+    def delete_resize_lines(self):
         self.hidd_resize_lines.update(self.disp_resize_lines)
         self.disp_resize_lines = {}
         for t, sh in self.hidd_resize_lines.items():
@@ -351,12 +378,22 @@ class ColumnHeaders(tk.Canvas):
                 self.itemconfig(t, tags=("",), state="hidden")
                 self.hidd_resize_lines[t] = False
 
-    def check_mouse_position_width_resizers(self, x: int, y: int) -> int | None:
+    def check_mouse_position_width_resizers(self, x, y):
+        """Check if the mouse position is within the boundaries of the width resizers.
+
+        Args:
+            x (int): The x-coordinate of the mouse position.
+            y (int): The y-coordinate of the mouse position.
+
+        Returns:
+            int or None: The column index if the mouse is within a width resizer,
+                        otherwise None.
+        """
         for c, (x1, y1, x2, y2) in self.visible_col_dividers.items():
             if x >= x1 and y >= y1 and x <= x2 and y <= y2:
                 return c
 
-    def mouse_motion(self, event: object) -> None:
+    def mouse_motion(self, event):
         if not self.currently_resizing_height and not self.currently_resizing_width:
             x = self.canvasx(event.x)
             y = self.canvasy(event.y)
@@ -398,7 +435,7 @@ class ColumnHeaders(tk.Canvas):
                 self.MT.reset_mouse_motion_creations()
         try_binding(self.extra_motion_func, event)
 
-    def double_b1(self, event: object) -> None:
+    def double_b1(self, event):
         self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
         self.focus_set()
         if (
@@ -438,7 +475,7 @@ class ColumnHeaders(tk.Canvas):
         self.mouse_motion(event)
         try_binding(self.extra_double_b1_func, event)
 
-    def b1_press(self, event: object) -> None:
+    def b1_press(self, event):
         self.MT.unbind("<MouseWheel>")
         self.focus_set()
         self.closed_dropdown = self.mouseclick_outside_editor_or_dropdown_all_canvases(inside=True)
@@ -502,7 +539,7 @@ class ColumnHeaders(tk.Canvas):
                         self.toggle_select_col(c, redraw=True)
         try_binding(self.extra_b1_press_func, event)
 
-    def b1_motion(self, event: object) -> None:
+    def b1_motion(self, event):
         x1, y1, x2, y2 = self.MT.get_canvas_visible_area()
         if self.width_resizing_enabled and self.rsz_w is not None and self.currently_resizing_width:
             x = self.canvasx(event.x)
@@ -599,17 +636,32 @@ class ColumnHeaders(tk.Canvas):
                 self.MT.main_table_redraw_grid_and_text(redraw_header=True, redraw_row_index=False)
         try_binding(self.extra_b1_motion_func, event)
 
-    def drag_height_resize(self) -> None:
+    def drag_height_resize(self):
         self.set_height(self.new_col_height, set_TL=True)
         self.MT.main_table_redraw_grid_and_text(redraw_header=True, redraw_row_index=True)
 
-    def get_b1_motion_box(self, start_col: int, end_col: int) -> tuple[int, int, int, int, Literal["columns"]]:
+    def get_b1_motion_box(self, start_col, end_col):
+        """Determine the motion box based on the starting and ending
+        columns.
+
+        Args:
+            start_col (int): The starting column index.
+            end_col (int): The ending column index.
+
+        Returns:
+            tuple(int, int, int, int, Literal["columns"]): A tuple containing:
+                - The top row index (always 0).
+                - The starting column index.
+                - The last row index (length of `MT.row_positions` - 1).
+                - The ending column index (incremented by 1).
+                - A literal string "columns".
+        """
         if end_col >= start_col:
             return 0, start_col, len(self.MT.row_positions) - 1, end_col + 1, "columns"
         elif end_col < start_col:
             return 0, end_col, len(self.MT.row_positions) - 1, start_col + 1, "columns"
 
-    def ctrl_b1_motion(self, event: object) -> None:
+    def ctrl_b1_motion(self, event):
         x1, y1, x2, y2 = self.MT.get_canvas_visible_area()
         if (
             self.drag_and_drop_enabled
@@ -663,7 +715,17 @@ class ColumnHeaders(tk.Canvas):
         elif not self.MT.ctrl_select_enabled:
             self.b1_motion(event)
 
-    def drag_and_drop_motion(self, event: object) -> float:
+    def drag_and_drop_motion(self, event):
+        """Handle the drag and drop motion for a table.
+
+        Args:
+            event (object): The event object containing information about the 
+                            drag-and-drop action.
+
+        Returns:
+            float: The new x-coordinate of the dragged column, or the x-coordinate
+                   of the nearest column edge if within a specified range.
+        """
         x = event.x
         wend = self.winfo_width()
         xcheck = self.xview()
@@ -698,13 +760,16 @@ class ColumnHeaders(tk.Canvas):
             return self.MT.col_positions[col + 1]
         return self.MT.col_positions[col]
 
-    def show_drag_and_drop_indicators(
-        self,
-        xpos: float,
-        y1: float,
-        y2: float,
-        cols: Sequence[int],
-    ) -> None:
+    def show_drag_and_drop_indicators(self, xpos, y1, y2, cols):
+        """Display drag-and-drop indicators for specified columns.
+
+        Args:
+            xpos (float): The x-coordinate where the indicators should be shown.
+            y1 (float): The starting y-coordinate for the indicators.
+            y2 (float): The ending y-coordinate for the indicators.
+            cols (Sequence[int]): A sequence of column indices for which the 
+                                  indicators should be displayed.
+        """
         self.hide_resize_and_ctrl_lines()
         self.create_resize_line(
             xpos,
@@ -725,13 +790,28 @@ class ColumnHeaders(tk.Canvas):
                 delete_on_timer=False,
             )
 
-    def hide_resize_and_ctrl_lines(self, ctrl_lines: bool = True) -> None:
+    def hide_resize_and_ctrl_lines(self, ctrl_lines=True):
+        """Hide resize lines and control outlines if specified.
+
+        Args:
+            ctrl_lines (bool, optional): If True, control outlines will also 
+                                          be hidden. Defaults to True.
+        """
         self.delete_resize_lines()
         self.MT.delete_resize_lines()
         if ctrl_lines:
             self.MT.delete_ctrl_outlines()
 
-    def scroll_if_event_offscreen(self, event: object) -> bool:
+    def scroll_if_event_offscreen(self, event):
+        """Scroll the view if the event occurs off-screen.
+
+        Args:
+            event (object): The event object containing the x-coordinate 
+                            of the mouse event.
+
+        Returns:
+            bool: True if a redraw is needed, False otherwise.
+        """
         xcheck = self.xview()
         need_redraw = False
         if event.x > self.winfo_width() and len(xcheck) > 1 and xcheck[1] < 1:
@@ -754,14 +834,25 @@ class ColumnHeaders(tk.Canvas):
             need_redraw = True
         return need_redraw
 
-    def fix_xview(self) -> None:
+    def fix_xview(self):
         xcheck = self.xview()
         if xcheck and xcheck[0] < 0:
             self.MT.set_xviews("moveto", 0)
         elif len(xcheck) > 1 and xcheck[1] > 1:
             self.MT.set_xviews("moveto", 1)
 
-    def event_over_dropdown(self, c: int, datacn: int, event: object, canvasx: float) -> bool:
+    def event_over_dropdown(self, c, datacn, event, canvasx):
+        """Determine if the event is over a dropdown.
+
+        Args:
+            c (int): The column index of the dropdown.
+            datacn (int): The data column index.
+            event (object): The event object associated with the mouse event.
+            canvasx (float): The x-coordinate in canvas coordinates.
+
+        Returns:
+            bool: True if the event occurs over the dropdown, False otherwise.
+        """
         if (
             event.y < self.MT.header_txt_height + 5
             and self.get_cell_kwargs(datacn, key="dropdown")
@@ -771,7 +862,18 @@ class ColumnHeaders(tk.Canvas):
             return True
         return False
 
-    def event_over_checkbox(self, c: int, datacn: int, event: object, canvasx: float) -> bool:
+    def event_over_checkbox(self, c, datacn, event, canvasx):
+        """Check if the event occurs over a checkbox.
+
+        Args:
+            c (int): The column index of the checkbox.
+            datacn (int): The data column index.
+            event (object): The event object associated with the mouse event.
+            canvasx (float): The x-coordinate in canvas coordinates.
+
+        Returns:
+            bool: True if the event occurs over the checkbox, False otherwise.
+        """
         if (
             event.y < self.MT.header_txt_height + 5
             and self.get_cell_kwargs(datacn, key="checkbox")
@@ -780,7 +882,7 @@ class ColumnHeaders(tk.Canvas):
             return True
         return False
 
-    def drag_width_resize(self) -> None:
+    def drag_width_resize(self):
         new_col_pos = int(self.coords("rwl")[0])
         old_width = self.MT.col_positions[self.rsz_w] - self.MT.col_positions[self.rsz_w - 1]
         size = new_col_pos - self.MT.col_positions[self.rsz_w - 1]
@@ -806,7 +908,7 @@ class ColumnHeaders(tk.Canvas):
                 )
             )
 
-    def b1_release(self, event: object) -> None:
+    def b1_release(self, event):
         if self.being_drawn_item is not None and (to_sel := self.MT.coords_and_type(self.being_drawn_item)):
             r_to_sel, c_to_sel = self.MT.selected.row, self.MT.selected.column
             self.MT.hide_selection_box(self.being_drawn_item)
@@ -915,14 +1017,27 @@ class ColumnHeaders(tk.Canvas):
         try_binding(self.extra_b1_release_func, event)
 
     def toggle_select_col(
-        self,
-        column: int,
-        add_selection: bool = True,
-        redraw: bool = True,
-        run_binding_func: bool = True,
-        set_as_current: bool = True,
-        ext: bool = False,
-    ) -> int:
+        self, column, add_selection=True, redraw=True, 
+        run_binding_func=True, set_as_current=True, ext=False
+    ):
+        """Toggle the selection state of a specified column.
+
+        Args:
+            column (int): The index of the column to toggle.
+            add_selection (bool, optional): Whether to add the column to 
+                the selection. Defaults to True.
+            redraw (bool, optional): Whether to redraw the column. 
+                Defaults to True.
+            run_binding_func (bool, optional): Whether to run the binding 
+                function. Defaults to True.
+            set_as_current (bool, optional): Whether to set the column as 
+                the current column. Defaults to True.
+            ext (bool, optional): Additional parameter for external 
+                handling. Defaults to False.
+
+        Returns:
+            int: The fill identifier for the column selection.
+        """
         if add_selection:
             if self.MT.col_selected(column):
                 fill_iid = self.MT.deselect(c=column, redraw=redraw)
@@ -942,12 +1057,22 @@ class ColumnHeaders(tk.Canvas):
         return fill_iid
 
     def select_col(
-        self,
-        c: int,
-        redraw: bool = False,
-        run_binding_func: bool = True,
-        ext: bool = False,
-    ) -> int:
+        self, c, redraw=False, run_binding_func=True, ext=False
+    ):
+        """Select a specified column and manage the visibility of selection boxes.
+
+        Args:
+            c (int): The index of the column to select.
+            redraw (bool, optional): Whether to redraw the main table. 
+                Defaults to False.
+            run_binding_func (bool, optional): Whether to execute the 
+                selection binding function. Defaults to True.
+            ext (bool, optional): Additional parameter for external 
+                handling. Defaults to False.
+
+        Returns:
+            int: The fill identifier for the selection box.
+        """
         boxes_to_hide = tuple(self.MT.selection_boxes)
         fill_iid = self.MT.create_selection_box(0, c, len(self.MT.row_positions) - 1, c + 1, "columns", ext=ext)
         for iid in boxes_to_hide:
@@ -959,13 +1084,24 @@ class ColumnHeaders(tk.Canvas):
         return fill_iid
 
     def add_selection(
-        self,
-        c: int,
-        redraw: bool = False,
-        run_binding_func: bool = True,
-        set_as_current: bool = True,
-        ext: bool = False,
-    ) -> int:
+        self, c, redraw=False, run_binding_func=True, set_as_current=True, ext=False
+    ):
+        """Add a selection box for the specified column.
+
+        Args:
+            c (int): The index of the column to add a selection for.
+            redraw (bool, optional): Whether to redraw the main table.
+                Defaults to False.
+            run_binding_func (bool, optional): Whether to execute the 
+                selection binding function. Defaults to True.
+            set_as_current (bool, optional): Whether to set the selection 
+                as the current one. Defaults to True.
+            ext (bool, optional): Additional parameter for external 
+                handling. Defaults to False.
+
+        Returns:
+            int: The fill identifier for the selection box.
+        """
         box = (0, c, len(self.MT.row_positions) - 1, c + 1, "columns")
         fill_iid = self.MT.create_selection_box(*box, set_current=set_as_current, ext=ext)
         if redraw:
@@ -975,17 +1111,25 @@ class ColumnHeaders(tk.Canvas):
         return fill_iid
 
     def display_box(
-        self,
-        x1: int,
-        y1: int,
-        x2: int,
-        y2: int,
-        fill: str,
-        outline: str,
-        state: str,
-        tags: str | tuple[str],
-        iid: None | int = None,
-    ) -> int:
+        self, x1, y1, x2, y2, fill, outline, state, tags, iid=None
+    ):
+        """Display a rounded or rectangular box on the canvas.
+
+        Args:
+            x1 (int): The x-coordinate of the top-left corner.
+            y1 (int): The y-coordinate of the top-left corner.
+            x2 (int): The x-coordinate of the bottom-right corner.
+            y2 (int): The y-coordinate of the bottom-right corner.
+            fill (str): The fill color of the box.
+            outline (str): The outline color of the box.
+            state (str): The state of the box (e.g., 'normal' or 'hidden').
+            tags (Union[str, Tuple[str]]): Tags to associate with the box.
+            iid (Optional[int]): The identifier of the box to update. 
+                Defaults to None.
+
+        Returns:
+            int: The identifier for the displayed box.
+        """
         coords = rounded_box_coords(
             x1,
             y1,
@@ -1006,13 +1150,32 @@ class ColumnHeaders(tk.Canvas):
             self.disp_boxes.add(iid)
         return iid
 
-    def hide_box(self, item: int) -> None:
+    def hide_box(self, item):
+        """Hide a box by changing its state to 'hidden' and managing its 
+        visibility tracking.
+
+        Args:
+            item (int): The identifier of the box to hide.
+        """
         if isinstance(item, int):
             self.disp_boxes.discard(item)
             self.hidd_boxes.add(item)
             self.itemconfig(item, state="hidden")
 
-    def get_cell_dimensions(self, datacn: int) -> tuple[int, int]:
+    def get_cell_dimensions(self, datacn):
+        """Retrieve the dimensions of a cell based on its data connection.
+
+        This method measures the width and height of the cell's text,
+        accounting for dropdowns and checkboxes if applicable.
+
+        Args:
+            datacn (int): The data connection identifier for the cell.
+
+        Returns:
+            tuple: A tuple containing the width and height of the cell,
+            where the width includes extra space if the cell has a
+            dropdown or checkbox.
+        """
         txt = self.get_valid_cell_data_as_str(datacn, fix=False)
         if txt:
             self.MT.txt_measure_canvas.itemconfig(
@@ -1032,11 +1195,22 @@ class ColumnHeaders(tk.Canvas):
             return w + self.MT.header_txt_height, h
         return w, h
 
-    def set_height_of_header_to_text(
-        self,
-        text: None | str = None,
-        only_if_too_small: bool = False,
-    ) -> int:
+    def set_height_of_header_to_text(self, text=None, only_if_too_small=False):
+        """Set the height of the header to match the text height.
+
+        This method adjusts the height of the header based on the
+        specified text, but only updates it if the current height is
+        too small, unless specified otherwise.
+
+        Args:
+            text (str, optional): The text to measure for height adjustment.
+            only_if_too_small (bool, optional): If True, only adjust
+            the height if the current height is smaller than the measured
+            text height.
+
+        Returns:
+            int: The new height of the header after adjustment.
+        """
         h = self.MT.min_header_height
         if (text is None and not self.MT._headers and isinstance(self.MT._headers, list)) or (
             isinstance(self.MT._headers, int) and self.MT._headers >= len(self.MT.data)
@@ -1089,12 +1263,25 @@ class ColumnHeaders(tk.Canvas):
             self.MT.main_table_redraw_grid_and_text(redraw_header=True, redraw_row_index=True)
         return h
 
-    def get_col_text_width(
-        self,
-        col: int,
-        visible_only: bool = False,
-        only_if_too_small: bool = False,
-    ) -> int:
+    def get_col_text_width(self, col, visible_only=False, only_if_too_small=False):
+        """Get the width of the text in a specified column.
+
+        This method calculates the width of the text for a specified
+        column. It can consider only the visible cells if requested
+        and can also restrict the adjustment to cases where the width
+        is too small.
+
+        Args:
+            col (int): The index of the column to measure.
+            visible_only (bool, optional): If True, measure only the
+            text in visible rows.
+            only_if_too_small (bool, optional): If True, adjust the
+            width only if the current width is smaller than the
+            measured text width.
+
+        Returns:
+            int: The width of the text in the specified column.
+        """
         self.fix_header()
         w = self.MT.min_column_width
         datacn = col if self.MT.all_columns_displayed else self.MT.displayed_columns[col]
@@ -1139,14 +1326,28 @@ class ColumnHeaders(tk.Canvas):
             w = int(self.MT.max_column_width)
         return w
 
-    def set_col_width(
-        self,
-        col: int,
-        width: None | int = None,
-        only_if_too_small: bool = False,
-        visible_only: bool = False,
-        recreate: bool = True,
-    ) -> int:
+    def set_col_width(self, col, width=None, only_if_too_small=False, visible_only=False, recreate=True):
+        """Set the width of a specified column.
+
+        This method sets the width for a given column, adjusting it 
+        based on the text content or other parameters provided. The 
+        width can be set only if it is currently too small if 
+        specified. Optionally, only visible rows can be considered 
+        for the width calculation.
+
+        Args:
+            col (int): The index of the column to set the width for.
+            width (int, optional): The desired width to set for the column.
+            only_if_too_small (bool, optional): If True, set the width 
+            only if the current width is smaller than the desired width.
+            visible_only (bool, optional): If True, consider only the 
+            text in visible rows for width calculations.
+            recreate (bool, optional): If True, recreate the column 
+            after adjusting the width.
+
+        Returns:
+            int: The final width set for the specified column.
+        """
         if width is None:
             width = self.get_col_text_width(col=col, visible_only=visible_only)
         if width <= self.MT.min_column_width:
@@ -1165,12 +1366,23 @@ class ColumnHeaders(tk.Canvas):
             self.MT.recreate_all_selection_boxes()
         return width
 
-    def set_width_of_all_cols(
-        self,
-        width: None | int = None,
-        only_if_too_small: bool = False,
-        recreate: bool = True,
-    ) -> None:
+    def set_width_of_all_cols(self, width=None, only_if_too_small=False, recreate=True):
+        """Set the width for all columns.
+
+        This method sets the width for each column in the table, either 
+        to a specified width or calculates it based on the content. The 
+        width can be set only if it is currently too small if specified.
+
+        Args:
+            width (int, optional): The desired width to set for all columns.
+            only_if_too_small (bool, optional): If True, set the width 
+            only if the current width is smaller than the desired width.
+            recreate (bool, optional): If True, recreate the columns 
+            after adjusting the widths.
+
+        Returns:
+            None
+        """
         if width is None:
             if self.MT.all_columns_displayed:
                 iterable = range(self.MT.total_data_cols())
@@ -1188,15 +1400,28 @@ class ColumnHeaders(tk.Canvas):
             self.MT.recreate_all_selection_boxes()
 
     def redraw_highlight_get_text_fg(
-        self,
-        fc: float,
-        sc: float,
-        c: int,
-        c_2: str,
-        c_3: str,
-        selections: dict,
-        datacn: int,
-    ) -> tuple[str, bool]:
+        self, fc, sc, c, c_2, c_3, selections, datacn
+    ):
+        """Redraw the highlight and determine the text foreground color.
+
+        This method checks for highlights and redraws the corresponding
+        elements based on the current selections. It calculates the fill
+        color and returns the text foreground color along with a flag
+        indicating if redrawing occurred.
+
+        Args:
+            fc (float): The first coordinate for the highlight.
+            sc (float): The second coordinate for the highlight.
+            c (int): The current column index.
+            c_2 (str): The second color in hex format.
+            c_3 (str): The third color in hex format.
+            selections (dict): A dictionary containing selected columns and cells.
+            datacn (int): The data column number.
+
+        Returns:
+            tuple: A tuple containing the text foreground color (str) and
+            a boolean indicating if redrawing occurred.
+        """
         redrawn = False
         kwargs = self.get_cell_kwargs(datacn, key="highlight")
         if kwargs:
@@ -1254,15 +1479,25 @@ class ColumnHeaders(tk.Canvas):
         return tf, redrawn
 
     def redraw_highlight(
-        self,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        fill: str,
-        outline: str,
-        tag: str | tuple[str],
-    ) -> bool:
+        self, x1, y1, x2, y2, fill, outline, tag
+    ):
+        """Redraw a highlight rectangle.
+
+        This method either updates the coordinates of an existing hidden
+        highlight or creates a new rectangle with the specified attributes.
+
+        Args:
+            x1 (float): The x-coordinate of the top-left corner.
+            y1 (float): The y-coordinate of the top-left corner.
+            x2 (float): The x-coordinate of the bottom-right corner.
+            y2 (float): The y-coordinate of the bottom-right corner.
+            fill (str): The fill color of the rectangle.
+            outline (str): The outline color of the rectangle.
+            tag (str or tuple): The tag(s) to associate with the rectangle.
+
+        Returns:
+            bool: True if the highlight was successfully redrawn.
+        """
         coords = (x1, y1, x2, y2)
         if self.hidd_high:
             iid, showing = self.hidd_high.popitem()
@@ -1277,12 +1512,19 @@ class ColumnHeaders(tk.Canvas):
         return True
 
     def redraw_gridline(
-        self,
-        points: Sequence[float],
-        fill: str,
-        width: int,
-        tag: str | tuple[str],
-    ) -> None:
+        self, points, fill, width, tag
+    ):
+        """Redraw a gridline using the specified parameters.
+
+        This method either updates an existing hidden gridline or creates a new one
+        based on the given coordinates and styles.
+
+        Args:
+            points (Sequence[float]): The coordinates of the line to be drawn.
+            fill (str): The color of the gridline.
+            width (int): The width of the gridline.
+            tag (str or tuple): The tag(s) to associate with the gridline.
+        """
         if self.hidd_grid:
             t, sh = self.hidd_grid.popitem()
             self.coords(t, points)
@@ -1296,17 +1538,34 @@ class ColumnHeaders(tk.Canvas):
 
     def redraw_dropdown(
         self,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        fill: str,
-        outline: str,
-        tag: str | tuple[str],
-        draw_outline: bool = True,
-        draw_arrow: bool = True,
-        open_: bool = False,
-    ) -> None:
+        x1,
+        y1,
+        x2,
+        y2,
+        fill,
+        outline,
+        tag,
+        draw_outline=True,
+        draw_arrow=True,
+        open_=False,
+    ):
+        """Redraw a dropdown indicator with optional arrow.
+
+        This method updates the appearance of a dropdown, including its outline
+        and arrow based on its open or closed state.
+
+        Args:
+            x1 (float): The x-coordinate of the top-left corner.
+            y1 (float): The y-coordinate of the top-left corner.
+            x2 (float): The x-coordinate of the bottom-right corner.
+            y2 (float): The y-coordinate of the bottom-right corner.
+            fill (str): The fill color for the dropdown arrow.
+            outline (str): The outline color for the dropdown.
+            tag (str or tuple): The tag(s) to associate with the dropdown.
+            draw_outline (bool): Whether to draw the outline. Default is True.
+            draw_arrow (bool): Whether to draw the arrow. Default is True.
+            open_ (bool): Whether the dropdown is currently open. Default is False.
+        """
         if draw_outline and self.PAR.ops.show_dropdown_borders:
             self.redraw_highlight(x1 + 1, y1 + 1, x2, y2, fill="", outline=self.PAR.ops.header_fg, tag=tag)
         if draw_arrow:
@@ -1354,15 +1613,30 @@ class ColumnHeaders(tk.Canvas):
 
     def redraw_checkbox(
         self,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        fill: str,
-        outline: str,
-        tag: str | tuple[str],
-        draw_check: bool = False,
-    ) -> None:
+        x1,
+        y1,
+        x2,
+        y2,
+        fill,
+        outline,
+        tag,
+        draw_check=False,
+    ):
+        """Redraw a checkbox with an optional check mark.
+
+        This method updates the appearance of a checkbox based on its filled
+        state, including whether to draw a check mark.
+
+        Args:
+            x1 (float): The x-coordinate of the top-left corner.
+            y1 (float): The y-coordinate of the top-left corner.
+            x2 (float): The x-coordinate of the bottom-right corner.
+            y2 (float): The y-coordinate of the bottom-right corner.
+            fill (str): The fill color for the checkbox.
+            outline (str): The outline color for the checkbox.
+            tag (str or tuple): The tag(s) to associate with the checkbox.
+            draw_check (bool): Whether to draw the check mark. Default is False.
+        """
         points = rounded_box_coords(x1, y1, x2, y2)
         if self.hidd_checkbox:
             t, sh = self.hidd_checkbox.popitem()
@@ -1394,7 +1668,15 @@ class ColumnHeaders(tk.Canvas):
                 t = self.create_polygon(points, fill=fill, outline=outline, tag=tag, smooth=True)
             self.disp_checkbox[t] = True
 
-    def configure_scrollregion(self, last_col_line_pos: float) -> None:
+    def configure_scrollregion(self, last_col_line_pos):
+        """Configure the scroll region of the widget.
+
+        This method sets the scroll region based on the last column's line
+        position and the current height of the widget.
+
+        Args:
+            last_col_line_pos (float): The position of the last column line.
+        """
         self.configure(
             scrollregion=(
                 0,
@@ -1403,19 +1685,38 @@ class ColumnHeaders(tk.Canvas):
                 self.current_height,
             )
         )
-
     def redraw_grid_and_text(
         self,
-        last_col_line_pos: float,
-        scrollpos_left: float,
-        x_stop: float,
-        grid_start_col: int,
-        grid_end_col: int,
-        text_start_col: int,
-        text_end_col: int,
-        scrollpos_right: float,
-        col_pos_exists: bool,
-    ) -> bool:
+        last_col_line_pos,
+        scrollpos_left,
+        x_stop,
+        grid_start_col,
+        grid_end_col,
+        text_start_col,
+        text_end_col,
+        scrollpos_right,
+        col_pos_exists,
+    ):
+        """Redraw the grid and associated text in the widget.
+
+        This method redraws the grid lines and text based on the provided
+        parameters. It manages the positioning of the grid and text in
+        relation to the scrolling position and column boundaries.
+
+        Args:
+            last_col_line_pos (float): The position of the last column line.
+            scrollpos_left (float): The left scrolling position.
+            x_stop (float): The stopping x-coordinate for the drawing.
+            grid_start_col (int): The starting column index for the grid.
+            grid_end_col (int): The ending column index for the grid.
+            text_start_col (int): The starting column index for the text.
+            text_end_col (int): The ending column index for the text.
+            scrollpos_right (float): The right scrolling position.
+            col_pos_exists (bool): Indicates if the column position exists.
+
+        Returns:
+            bool: True if redraw was successful, False otherwise.
+        """
         try:
             self.configure_scrollregion(last_col_line_pos=last_col_line_pos)
         except Exception:
@@ -1665,7 +1966,22 @@ class ColumnHeaders(tk.Canvas):
                     dct[iid] = False
         return True
 
-    def get_redraw_selections(self, startc: int, endc: int) -> dict[str, set[int]]:
+    def get_redraw_selections(self, startc, endc):
+        """Get the selections that need to be redrawn between specified columns.
+
+        This method identifies which selections (rows or cells) overlap with
+        the specified column range and returns a dictionary indicating the
+        selections that require redrawing.
+
+        Args:
+            startc (int): The starting column index for the range.
+            endc (int): The ending column index for the range.
+
+        Returns:
+            dict(str: set[int]): A dictionary where the keys are selection types ('cells' or
+                  other types), and the values are sets of column indices
+                  that need to be redrawn.
+        """
         d = defaultdict(set)
         for item, box in self.MT.get_selection_items():
             r1, c1, r2, c2 = box.coords
@@ -1674,7 +1990,21 @@ class ColumnHeaders(tk.Canvas):
                     d[box.type_ if box.type_ != "rows" else "cells"].add(c)
         return d
 
-    def open_cell(self, event: object = None, ignore_existing_editor: bool = False) -> None:
+    def open_cell(self, event=None, ignore_existing_editor=False):
+        """Open the selected cell for editing or interaction.
+
+        This method checks if any cells are selected and whether
+        an existing text editor is open. If a cell is selected and
+        it is not marked as readonly, it opens a dropdown or checkbox
+        if applicable. Otherwise, it opens a text editor for the cell.
+
+        Args:
+            event (object, optional): The event object triggered by the
+                user interaction. Defaults to None.
+            ignore_existing_editor (bool, optional): If set to True,
+                allows opening the cell even if an existing editor is
+                open. Defaults to False.
+        """
         if not self.MT.anything_selected() or (not ignore_existing_editor and self.text_editor.open):
             return
         if not self.MT.selected:
@@ -1693,7 +2023,23 @@ class ColumnHeaders(tk.Canvas):
             self.open_text_editor(event=event, c=c, dropdown=False)
 
     # displayed indexes
-    def get_cell_align(self, c: int) -> str:
+    def get_cell_align(self, c):
+        """Get the alignment for a specified cell column.
+
+        This method retrieves the alignment setting for a given
+        cell column. If the column is not displayed, it checks
+        against the displayed columns. If no specific alignment
+        is set for the cell, it defaults to the general alignment
+        setting.
+
+        Args:
+            c (int): The index of the column for which to retrieve
+                the alignment.
+
+        Returns:
+            str: The alignment for the specified cell column,
+                which can be 'left', 'center', or 'right'.
+        """
         datacn = c if self.MT.all_columns_displayed else self.MT.displayed_columns[c]
         if datacn in self.cell_options and "align" in self.cell_options[datacn]:
             align = self.cell_options[datacn]["align"]
@@ -1704,12 +2050,30 @@ class ColumnHeaders(tk.Canvas):
     # c is displayed col
     def open_text_editor(
         self,
-        event: object = None,
-        c: int = 0,
-        text: object = None,
-        state: str = "normal",
-        dropdown: bool = False,
-    ) -> bool:
+        event=None,
+        c=0,
+        text=None,
+        state="normal",
+        dropdown=False,
+    ):
+        """Open the text editor for editing a cell's content.
+
+        This method handles the opening of a text editor for a
+        specific cell. It responds to various keyboard events and
+        can initialize the editor with existing cell data. The
+        editor allows users to modify cell content, and it can
+        automatically resize based on the input.
+
+        Args:
+            event (object): The event that triggered the editor to open.
+            c (int): The index of the column to edit.
+            text (object): Optional initial text for the editor.
+            state (str): The state of the text editor (e.g., 'normal').
+            dropdown (bool): Indicates if the editor was opened from a dropdown.
+
+        Returns:
+            bool: True if the editor was successfully opened, False otherwise.
+        """
         text = None
         extra_func_key = "??"
         if event is None or self.MT.event_opens_dropdown_or_checkbox(event):
@@ -1816,10 +2180,24 @@ class ColumnHeaders(tk.Canvas):
     # displayed indexes
     def text_editor_has_wrapped(
         self,
-        r: int = 0,
-        c: int = 0,
-        check_lines: None = None,  # just here to receive text editor arg
-    ) -> None:
+        r=0,
+        c=0,
+        check_lines=None,  # just here to receive text editor arg
+    ):
+        """Check if the text editor has wrapped lines and adjust its width.
+
+        This method adjusts the width of the text editor based on the
+        current width and the header text height. If the width changes,
+        it updates the column width and redraws the main table.
+
+        Args:
+            r (int): The row index (default is 0).
+            c (int): The column index (default is 0).
+            check_lines (None): Placeholder for future text editor functionality.
+
+        Returns:
+            None
+        """
         if self.width_resizing_enabled:
             curr_width = self.text_editor.window.winfo_width()
             new_width = curr_width + (self.MT.header_txt_height * 2)
@@ -1834,7 +2212,17 @@ class ColumnHeaders(tk.Canvas):
                 self.coords(self.text_editor.canvas_id, self.MT.col_positions[c] + 1, 0)
 
     # displayed indexes
-    def text_editor_newline_binding(self, event: object = None, check_lines: bool = True) -> None:
+    def text_editor_newline_binding(self, event=None, check_lines=True):
+        """Adjust the height of the text editor on newline binding.
+
+        This method increases the height of the text editor when a newline
+        is entered, ensuring that it doesn't exceed the minimum header height
+        or the available space. It also updates the dropdown position if open.
+
+        Args:
+            event (None): The event associated with the key binding (default is None).
+            check_lines (bool): Flag to check if the new height exceeds the current height (default is True).
+        """
         if not self.height_resizing_enabled:
             return
         curr_height = self.text_editor.window.winfo_height()
@@ -1865,7 +2253,19 @@ class ColumnHeaders(tk.Canvas):
                     )
                     self.itemconfig(self.dropdown.canvas_id, anchor=anchor, height=win_h)
 
-    def refresh_open_window_positions(self, zoom: Literal["in", "out"]) -> None:
+    def refresh_open_window_positions(self, zoom):
+        """Refresh the positions of open text editor and dropdown windows.
+
+        This method adjusts the height and width of the text editor and the dropdown
+        menu based on the current zoom level. It recalculates positions to ensure
+        proper alignment within the grid.
+
+        Args:
+            zoom (str): Indicates the zoom action. Accepts "in" to zoom in or "out" to zoom out.
+
+        Returns:
+            None
+        """
         if self.text_editor.open:
             c = self.text_editor.column
             self.text_editor.window.config(
@@ -1907,7 +2307,7 @@ class ColumnHeaders(tk.Canvas):
                 )
                 # self.itemconfig(self.dropdown.canvas_id, anchor=anchor, height=win_h)
 
-    def hide_text_editor(self) -> None:
+    def hide_text_editor(self):
         if self.text_editor.open:
             for binding in text_editor_to_unbind:
                 self.text_editor.tktext.unbind(binding)
@@ -1915,7 +2315,21 @@ class ColumnHeaders(tk.Canvas):
             self.text_editor.open = False
 
     # c is displayed col
-    def close_text_editor(self, event: tk.Event) -> Literal["break"] | None:
+    def close_text_editor(self, event):
+        """Handle closing the text editor based on user input.
+
+        This method checks if the text editor should be closed based on
+        the current focus and the Escape key press. If the editor is
+        closed, it updates the cell data with the text editor's value.
+
+        Args:
+            event (tk.Event): The event object containing information about
+                              the key press or focus change.
+
+        Returns:
+            str or None: Returns "break" to indicate the event is handled,
+                          or None if no action is taken.
+        """
         # checking if text editor should be closed or not
         # errors if __tk_filedialog is open
         try:
@@ -1970,11 +2384,24 @@ class ColumnHeaders(tk.Canvas):
             self.focus_set()
         return "break"
 
-    def get_dropdown_height_anchor(
-        self,
-        c: int,
-        text_editor_h: None | int = None,
-    ) -> tuple[int, Literal["nw"]]:
+    def get_dropdown_height_anchor(self, c, text_editor_h=None):
+        """Calculate the height and anchor position for the dropdown.
+
+        This method computes the height of the dropdown based on the
+        number of lines in the dropdown values and the height of the
+        text editor. It ensures that the dropdown does not exceed
+        predefined size limits.
+
+        Args:
+            c (int): The column index for which the dropdown is being
+                      calculated.
+            text_editor_h (int, optional): The current height of the
+                                            text editor. Defaults to None.
+
+        Returns:
+            tuple: A tuple containing the calculated height (int) and
+                   the anchor position (str) which is always "nw".
+        """
         win_h = 5
         datacn = self.MT.datacn(c)
         for i, v in enumerate(self.get_cell_kwargs(datacn, key="dropdown")["values"]):
@@ -1999,17 +2426,34 @@ class ColumnHeaders(tk.Canvas):
             win_h = win_h2
         return win_h, "nw"
 
-    def dropdown_text_editor_modified(
-        self,
-        dd_window: object,
-        event: dict,
-        modified_func: Callable | None,
-    ) -> None:
+    def dropdown_text_editor_modified(self, dd_window, event, modified_func=None):
+        """Handle modifications in the dropdown text editor.
+
+        This method checks if a modification function is provided and
+        calls it with the event data. After that, it updates the dropdown
+        window by calling its search_and_see method.
+
+        Args:
+            dd_window (object): The dropdown window object to be updated.
+            event (dict): The event data associated with the modification.
+            modified_func (Callable, optional): A function to handle
+                                                 the modification. Defaults to None.
+        """
         if modified_func:
             modified_func(event)
         dd_window.search_and_see(event)
 
-    def open_dropdown_window(self, c: int, event: object = None) -> None:
+    def open_dropdown_window(self, c, event=None):
+        """Open the dropdown window for the specified column.
+
+        This method hides the text editor, checks if the dropdown can be opened,
+        and initializes the dropdown window. It sets the size and position of 
+        the dropdown based on the specified column.
+
+        Args:
+            c (int): The column index for which to open the dropdown.
+            event (object, optional): The event that triggered the dropdown. Defaults to None.
+        """
         self.hide_text_editor()
         kwargs = self.get_cell_kwargs(self.MT.datacn(c), key="dropdown")
         if kwargs["state"] == "normal":
@@ -2083,12 +2527,18 @@ class ColumnHeaders(tk.Canvas):
         if redraw:
             self.MT.main_table_redraw_grid_and_text(redraw_header=True, redraw_row_index=False, redraw_table=False)
 
-    def close_dropdown_window(
-        self,
-        c: None | int = None,
-        selection: object = None,
-        redraw: bool = True,
-    ) -> None:
+    def close_dropdown_window(self, c=None, selection=None, redraw=True):
+        """Close the dropdown window and handle selection changes.
+
+        This method handles the closure of the dropdown window, updates the 
+        relevant cell data based on the selected value, and calls any necessary 
+        validation or selection functions.
+
+        Args:
+            c (int, optional): The column index associated with the dropdown. Defaults to None.
+            selection (object, optional): The selected value from the dropdown. Defaults to None.
+            redraw (bool, optional): Indicates whether to redraw the grid. Defaults to True.
+        """
         if c is not None and selection is not None:
             datacn = c if self.MT.all_columns_displayed else self.MT.displayed_columns[c]
             kwargs = self.get_cell_kwargs(datacn, key="dropdown")
@@ -2120,13 +2570,32 @@ class ColumnHeaders(tk.Canvas):
         self.focus_set()
         self.hide_text_editor_and_dropdown(redraw=redraw)
 
-    def hide_text_editor_and_dropdown(self, redraw: bool = True) -> None:
+    def hide_text_editor_and_dropdown(self, redraw=True):
+        """Hide the text editor and dropdown window.
+
+        This method hides both the text editor and the dropdown window. 
+        If specified, it also refreshes the main table.
+
+        Args:
+            redraw (bool, optional): Indicates whether to refresh the main table. Defaults to True.
+        """
         self.hide_text_editor()
         self.hide_dropdown_window()
         if redraw:
             self.MT.refresh()
 
-    def mouseclick_outside_editor_or_dropdown(self, inside: bool = False) -> int | None:
+    def mouseclick_outside_editor_or_dropdown(self, inside=False):
+        """Handle mouse click events outside the editor or dropdown.
+
+        This method closes the text editor if it is open and hides the dropdown window if it is visible.
+        If the click occurred inside the main table, it triggers a redraw of the table.
+
+        Args:
+            inside (bool, optional): Indicates whether the mouse click occurred inside the main table. Defaults to False.
+
+        Returns:
+            int or None: The coordinates of the closed dropdown window, or None if it was not open.
+        """
         closed_dd_coords = self.dropdown.get_coords()
         if self.text_editor.open:
             self.close_text_editor(new_tk_event("ButtonPress-1"))
@@ -2140,12 +2609,29 @@ class ColumnHeaders(tk.Canvas):
                 )
         return closed_dd_coords
 
-    def mouseclick_outside_editor_or_dropdown_all_canvases(self, inside: bool = False) -> int | None:
+    def mouseclick_outside_editor_or_dropdown_all_canvases(self, inside=False):
+        """Handle mouse click events outside the editor or dropdown for all canvases.
+
+        This method calls the mouse click handler for both the main table and the RI canvas,
+        and then processes the click for the current canvas.
+
+        Args:
+            inside (bool, optional): Indicates whether the mouse click occurred inside the main table. Defaults to False.
+
+        Returns:
+            int or None: The coordinates of the closed dropdown window from the current canvas, or None if it was not open.
+        """
         self.RI.mouseclick_outside_editor_or_dropdown()
         self.MT.mouseclick_outside_editor_or_dropdown()
         return self.mouseclick_outside_editor_or_dropdown(inside)
 
-    def hide_dropdown_window(self) -> None:
+    def hide_dropdown_window(self):
+        """Hide the dropdown window if it is open.
+
+        This method checks if the dropdown window is currently open.
+        If so, it unbinds the focus out event and hides the associated
+        canvas element.
+        """
         if self.dropdown.open:
             self.dropdown.window.unbind("<FocusOut>")
             self.itemconfig(self.dropdown.canvas_id, state="hidden")
@@ -2154,14 +2640,32 @@ class ColumnHeaders(tk.Canvas):
     # internal event use
     def set_cell_data_undo(
         self,
-        c: int = 0,
-        datacn: int | None = None,
-        value: object = "",
-        cell_resize: bool = True,
-        undo: bool = True,
-        redraw: bool = True,
-        check_input_valid: bool = True,
-    ) -> bool:
+        c=0,
+        datacn=None,
+        value="",
+        cell_resize=True,
+        undo=True,
+        redraw=True,
+        check_input_valid=True,
+    ):
+        """Set the cell data with undo functionality.
+
+        This method updates the cell data, enabling undo functionality
+        if required. It handles cell resizing and validation based on
+        input parameters. It returns whether the cell was edited.
+
+        Args:
+            c (int): The column index to update.
+            datacn (int): The data column number; defaults to None.
+            value (object): The value to set in the cell; defaults to an empty string.
+            cell_resize (bool): Whether to resize the cell based on the content; defaults to True.
+            undo (bool): Whether to push the change to the undo stack; defaults to True.
+            redraw (bool): Whether to refresh the view after the change; defaults to True.
+            check_input_valid (bool): Whether to validate the input; defaults to True.
+
+        Returns:
+            bool: True if the cell was edited, False otherwise.
+        """
         if datacn is None:
             datacn = c if self.MT.all_columns_displayed else self.MT.displayed_columns[c]
         event_data = event_dict(
@@ -2201,7 +2705,16 @@ class ColumnHeaders(tk.Canvas):
             self.MT.sheet_modified(event_data)
         return edited
 
-    def set_cell_data(self, datacn: int | None = None, value: object = "") -> None:
+    def set_cell_data(self, datacn=None, value=""):
+        """Set the data for a specified cell.
+
+        This method updates the cell data in the header. If the column 
+        corresponds to a checkbox, it converts the value to a boolean.
+
+        Args:
+            datacn (int): The data column number; defaults to None.
+            value (object): The value to set in the cell; defaults to an empty string.
+        """
         if isinstance(self.MT._headers, int):
             self.MT.set_cell_data(datarn=self.MT._headers, datacn=datacn, value=value)
         else:
@@ -2211,7 +2724,22 @@ class ColumnHeaders(tk.Canvas):
             else:
                 self.MT._headers[datacn] = value
 
-    def input_valid_for_cell(self, datacn: int, value: object, check_readonly: bool = True) -> bool:
+    def input_valid_for_cell(self, datacn, value, check_readonly=True):
+        """Validate the input for a specific cell.
+
+        This method checks if the given value is valid for the cell specified 
+        by datacn, considering read-only status, checkbox requirements, 
+        existing cell value, and dropdown validation.
+
+        Args:
+            datacn (int): The data column number.
+            value (object): The value to validate.
+            check_readonly (bool): Whether to check if the cell is read-only; 
+                defaults to True.
+
+        Returns:
+            bool: True if the value is valid for the cell, otherwise False.
+        """
         if check_readonly and self.get_cell_kwargs(datacn, key="readonly"):
             return False
         if self.get_cell_kwargs(datacn, key="checkbox"):
@@ -2223,20 +2751,42 @@ class ColumnHeaders(tk.Canvas):
             return False
         return True
 
-    def cell_equal_to(self, datacn: int, value: object) -> bool:
+    def cell_equal_to(self, datacn, value):
+        """Check if the cell value is equal to the given value.
+
+        This method verifies if the value of the cell specified by datacn
+        is equal to the provided value. It handles both list and integer 
+        header types.
+
+        Args:
+            datacn (int): The data column number.
+            value (object): The value to compare with the cell's value.
+
+        Returns:
+            bool: True if the cell's value equals the given value, otherwise False.
+        """
         self.fix_header(datacn)
         if isinstance(self.MT._headers, list):
             return self.MT._headers[datacn] == value
         elif isinstance(self.MT._headers, int):
             return self.MT.cell_equal_to(self.MT._headers, datacn, value)
 
-    def get_cell_data(
-        self,
-        datacn: int,
-        get_displayed: bool = False,
-        none_to_empty_str: bool = False,
-        redirect_int: bool = False,
-    ) -> object:
+    def get_cell_data(self, datacn, get_displayed=False, none_to_empty_str=False, redirect_int=False):
+        """Retrieve the cell data for the given data column number.
+
+        This method returns the value of the specified cell, with options 
+        for formatting and behavior based on input parameters.
+
+        Args:
+            datacn (int): The data column number to retrieve the value for.
+            get_displayed (bool): If True, return the displayed cell value as a string.
+            none_to_empty_str (bool): If True, return an empty string instead of None.
+            redirect_int (bool): If True and the headers are an int, call the internal 
+                method to get cell data.
+
+        Returns:
+            object: The value of the specified cell, or an empty string if conditions are met.
+        """
         if get_displayed:
             return self.get_valid_cell_data_as_str(datacn, fix=False)
         if redirect_int and isinstance(self.MT._headers, int):  # internal use
@@ -2250,28 +2800,56 @@ class ColumnHeaders(tk.Canvas):
             return ""
         return self.MT._headers[datacn]
 
-    def get_valid_cell_data_as_str(self, datacn: int, fix: bool = True) -> str:
+    def get_valid_cell_data_as_str(self, datacn, fix=True):
+        """Retrieve the valid cell data as a string for the specified data column.
+
+        This method checks for dropdown or checkbox configurations to determine
+        the display text. If no valid data is found, it retrieves the data from
+        the header or returns a default header value if applicable.
+
+        Args:
+            datacn (int): The data column number to retrieve the string value for.
+            fix (bool): If True, attempt to fix the header for the data column.
+
+        Returns:
+            str: The valid cell data as a string, or a default value if applicable.
+        """
         kwargs = self.get_cell_kwargs(datacn, key="dropdown")
         if kwargs:
             if kwargs["text"] is not None:
-                return f"{kwargs['text']}"
+                return "{}".format(kwargs['text'])
         else:
             kwargs = self.get_cell_kwargs(datacn, key="checkbox")
             if kwargs:
-                return f"{kwargs['text']}"
+                return "{}".format(kwargs['text'])
         if isinstance(self.MT._headers, int):
             return self.MT.get_valid_cell_data_as_str(self.MT._headers, datacn, get_displayed=True)
         if fix:
             self.fix_header(datacn)
         try:
-            value = "" if self.MT._headers[datacn] is None else f"{self.MT._headers[datacn]}"
+            value = "" if self.MT._headers[datacn] is None else "{}".format(self.MT._headers[datacn])
         except Exception:
             value = ""
         if not value and self.PAR.ops.show_default_header_for_empty:
             value = get_n2a(datacn, self.PAR.ops.default_header)
         return value
 
-    def get_value_for_empty_cell(self, datacn: int, c_ops: bool = True) -> object:
+    def get_value_for_empty_cell(self, datacn, c_ops=True):
+        """Get the default value for an empty cell based on its configuration.
+
+        This method checks the cell's configuration to determine what value 
+        should be returned when the cell is empty. If the cell is a checkbox, 
+        it defaults to `False`. If it's a dropdown with validation, it returns 
+        the first valid value from the dropdown options.
+
+        Args:
+            datacn (int): The data column number to retrieve the default value for.
+            c_ops (bool): If True, consider cell operations.
+
+        Returns:
+            object: The value to use for the empty cell, which can be 
+            False, a valid dropdown value, or an empty string.
+        """
         if self.get_cell_kwargs(datacn, key="checkbox", cell=c_ops):
             return False
         kwargs = self.get_cell_kwargs(datacn, key="dropdown", cell=c_ops)
@@ -2279,10 +2857,35 @@ class ColumnHeaders(tk.Canvas):
             return kwargs["values"][0]
         return ""
 
-    def get_empty_header_seq(self, end: int, start: int = 0, c_ops: bool = True) -> list[object]:
+    def get_empty_header_seq(self, end, start=0, c_ops=True):
+        """Generate a sequence of default values for empty headers.
+
+        This method creates a list of default values for empty headers 
+        within the specified range. It retrieves the default value for each 
+        header based on its configuration using `get_value_for_empty_cell`.
+
+        Args:
+            end (int): The exclusive upper limit for the header index range.
+            start (int): The inclusive lower limit for the header index range (default is 0).
+            c_ops (bool): If True, consider cell operations when getting values.
+
+        Returns:
+            list: A list of default values for empty headers from start to end.
+        """
         return [self.get_value_for_empty_cell(datacn, c_ops=c_ops) for datacn in range(start, end)]
 
-    def fix_header(self, datacn: None | int = None) -> None:
+    def fix_header(self, datacn=None):
+        """Ensure the headers are in the correct format and extend if necessary.
+
+        This method checks the type of the headers and converts them into a 
+        list if they are not already. If a `datacn` is provided and exceeds 
+        the current length of the headers, the headers are extended with 
+        default values.
+
+        Args:
+            datacn (int): The index of the column header to check. If provided 
+                and out of range, the headers will be extended (default is None).
+        """
         if isinstance(self.MT._headers, int):
             return
         if isinstance(self.MT._headers, float):
@@ -2297,7 +2900,19 @@ class ColumnHeaders(tk.Canvas):
             self.MT._headers.extend(self.get_empty_header_seq(end=datacn + 1, start=len(self.MT._headers)))
 
     # displayed indexes
-    def set_col_width_run_binding(self, c: int, width: int | None = None, only_if_too_small: bool = True) -> None:
+    def set_col_width_run_binding(self, c, width=None, only_if_too_small=True):
+        """Set the width of a specified column and trigger a resize event if necessary.
+
+        This method adjusts the width of a specified column and checks if 
+        the new width differs from the old width. If it does, a resize 
+        event is triggered to notify any relevant listeners.
+
+        Args:
+            c (int): The index of the column to adjust.
+            width (int or None): The new width for the column (default is None).
+            only_if_too_small (bool): If True, the width will only be set if 
+                it is smaller than the specified width (default is True).
+        """
         old_width = self.MT.col_positions[c + 1] - self.MT.col_positions[c]
         new_width = self.set_col_width(c, width=width, only_if_too_small=only_if_too_small)
         if self.column_width_resize_func is not None and old_width != new_width:
@@ -2310,7 +2925,20 @@ class ColumnHeaders(tk.Canvas):
             )
 
     # internal event use
-    def click_checkbox(self, c: int, datacn: int | None = None, undo: bool = True, redraw: bool = True) -> None:
+    def click_checkbox(self, c, datacn=None, undo=True, redraw=True):
+        """Handle the click event for a checkbox in the specified column.
+
+        This method toggles the checkbox state for the specified column and 
+        updates the corresponding cell data. It also triggers relevant events 
+        and checks any associated functions.
+
+        Args:
+            c (int): The index of the column containing the checkbox.
+            datacn (int or None): The index of the data column (default is None).
+            undo (bool): If True, enables undo functionality (default is True).
+            redraw (bool): If True, refreshes the display after the operation 
+                (default is True).
+        """
         if datacn is None:
             datacn = c if self.MT.all_columns_displayed else self.MT.displayed_columns[c]
         kwargs = self.get_cell_kwargs(datacn, key="checkbox")
@@ -2345,7 +2973,24 @@ class ColumnHeaders(tk.Canvas):
         if redraw:
             self.MT.refresh()
 
-    def get_cell_kwargs(self, datacn: int, key: Hashable = "dropdown", cell: bool = True) -> dict:
+    def get_cell_kwargs(self, datacn, key="dropdown", cell=True):
+        """Retrieve the cell options for a specific cell and key.
+
+        This method checks if the given cell (datacn) has associated options 
+        for the specified key. If available, it returns the options as a 
+        dictionary; otherwise, it returns an empty dictionary.
+
+        Args:
+            datacn (int): The index of the data column.
+            key (Hashable): The specific option key to retrieve (default is 
+                "dropdown").
+            cell (bool): If True, checks for cell-specific options (default is 
+                True).
+
+        Returns:
+            dict: The options associated with the specified cell and key, or 
+                an empty dictionary if none exist.
+        """
         if cell and datacn in self.cell_options and key in self.cell_options[datacn]:
             return self.cell_options[datacn][key]
         return {}
